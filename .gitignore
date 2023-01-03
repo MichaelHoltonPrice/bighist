@@ -1,0 +1,6 @@
+bighist.egg-info
+build
+dist
+bighist_env
+bighist/__pycache__
+tests/__pycache__

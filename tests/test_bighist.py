@@ -2,6 +2,7 @@ import unittest
 from bighist.bighist import *
 import math
 
+
 class TestBigHist(unittest.TestCase):
 
     def test_loadSeshatDataset(self):
@@ -31,33 +32,31 @@ class TestBigHist(unittest.TestCase):
             df = loadSeshatDataset(version='PNAS2017', flavor=flavor)
             self.assertTrue(df.shape[0] > 0)
 
-    def test_loadPNAS2017Data(self):
-        # Check that we can load both the unscaled and scaled CC arrays
-        CC_df, CC_names, CC_matrix_unscaled, CC_matrix_scaled,\
-            P, D, Q, PC_matrix = loadPNAS2017Data()
-        self.assertEqual(CC_df.shape, (8280, 13))
-        self.assertEqual(len(CC_names), 9)
-        self.assertEqual(CC_matrix_unscaled.shape, (8280, 9))
-        self.assertEqual(CC_matrix_scaled.shape, (8280, 9))
-        self.assertEqual(PC_matrix.shape, (8280, 9))
-        self.assertEqual(P.shape, (8280, 9))
-        self.assertEqual(len(D), 9)
-        self.assertEqual(Q.shape, (9, 9))
+    def test_StratifiedTimeSeries(self):
+        ts = StratifiedTimeSeries.loadSeshatPNAS2017Data()
+        self.assertEqual(ts.df.shape, (8280, 13))
+        self.assertEqual(len(ts.features), 9)
+        self.assertEqual(ts.featureMatrix.shape, (8280, 9))
+        self.assertEqual(ts.pcMatrix.shape, (8280, 9))
+        self.assertEqual(ts.P.shape, (8280, 9))
+        self.assertEqual(len(ts.D), 9)
+        self.assertEqual(ts.Q.shape, (9, 9))
 
         # Iterate over columns to check the scaling
         for cc_num in range(9):
-            CC_unscaled = CC_matrix_unscaled[:,cc_num]
-            self.assertNotAlmostEqual(np.mean(CC_unscaled), 0, places=8)
-            self.assertNotAlmostEqual(np.std(CC_unscaled), 1, places=8)
-            CC_scaled = CC_matrix_scaled[:,cc_num]
+            CC_scaled = ts.featureMatrix[:,cc_num]
             self.assertAlmostEqual(np.mean(CC_scaled), 0, places=8)
             self.assertAlmostEqual(np.std(CC_scaled), 1, places=8)
-
-            CC_rescaled = CC_unscaled - np.mean(CC_unscaled)
-            CC_rescaled = CC_rescaled / np.std(CC_rescaled)
-            # TODO: there most be a better way to check equality for vectors
-            for i in range(len(CC_rescaled)):
-                self.assertAlmostEqual(CC_scaled[i], CC_rescaled[i], places=8)
+        
+        # Check that we can add a flow analysis. This also tests doFlowAnalysis
+        # TODO: test if interpTimes is not input
+        interpTimes = np.arange(-9600,1901,100)
+        ts.addFlowAnalysis(interpTimes=interpTimes)
+        self.assertEqual(ts.movArrayOut.shape, (414, 9, 2))
+        self.assertEqual(ts.velArrayOut.shape, (414, 9, 3))
+        self.assertEqual(ts.flowInfo.shape, (414, 2))
+        self.assertEqual(ts.movArrayOutInterp.shape, (852, 9, 2))
+        self.assertEqual(ts.flowInfoInterp.shape, (852, 2))
 
     def test_getRegionDict(self):
         # Ensure an error is thrown for an unsupported version
@@ -98,28 +97,15 @@ class TestBigHist(unittest.TestCase):
         self.assertEqual(len(NGAs), 30)
 
     def test_tailoredSvd(self):
-        # Do an SVD on the original PNAS 2017 dataset and check the variance
-        # explained by PC1 (it should be .772)
+        # Check that the variance variance explained by PC1 is .772 for 
+        # the Seshat PNAS 2017 dataset. tailoredSvd is called inside the
+        # init method for StratifiedTimeSeries, so this amounts to an
+        # indirect functional nest of the method.
 
-        CC_df, CC_names, CC_matrix_unscaled, CC_matrix_scaled,\
-            P, D, Q, PC_matrix = loadPNAS2017Data()
-        Dsqr = [v**2 for v in D]
+        ts = StratifiedTimeSeries.loadSeshatPNAS2017Data()
+        Dsqr = [v**2 for v in ts.D]
         PC1_var = Dsqr[0] / np.sum(Dsqr)
         self.assertAlmostEqual(PC1_var, .772, places=3)
-
-    def test_doFlowAnalysis(self):
-        # Do a flow analysis on the PNAS 2017 dataset
-        CC_df, CC_names, CC_matrix_unscaled, CC_matrix_scaled,\
-            P, D, Q, PC_matrix = loadPNAS2017Data()
-        interpTimes = np.arange(-9600,1901,100)
-        movArrayOut, velArrayOut, flowInfo,\
-            movArrayOutInterp, flowInfoInterp =\
-                doFlowAnalysis(CC_df, PC_matrix, interpTimes=interpTimes)
-        self.assertEqual(movArrayOut.shape, (414, 9, 2))
-        self.assertEqual(velArrayOut.shape, (414, 9, 3))
-        self.assertEqual(flowInfo.shape, (414, 2))
-        self.assertEqual(movArrayOutInterp.shape, (852, 9, 2))
-        self.assertEqual(flowInfoInterp.shape, (852, 2))
 
 if __name__ == '__main__':
     unittest.main()

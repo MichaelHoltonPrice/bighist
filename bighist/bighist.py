@@ -109,23 +109,24 @@ class StratifiedTimeSeries:
                             lineWidth=.01,
                             headWidth=.15,
                             headLength=.1,
-                            arrowAlpha=1):
+                            arrowAlpha=1,
+                            subseriesColors=None):
         """Create a movement plot for PC1 and PC2 using movArrayOut. Most plot
         elements, including axis labels, should be set outside this method. The
         exceptions are the optional inputs, lineWidth (width of the lines),
         headWidth (width of the arrows), headLength (length of the arrows), and
-        arrowAlpha (transparency of the arrows).
+        arrowAlpha (transparency of the arrows). subseriesColors is an optional
+        input that contains information on how to colors subseries. It is a
+        dictionary that maps subseries IDs onto rgb colors. arrowAlpha is not
+        applied to subseriesColors.
         """
         for i in range(0, self.movArrayOut.shape[0]):
             if not np.isnan(self.movArrayOut[i,0,1]):
                 nga = self.flowInfo[self.subseriesColumn][i]
-                #region = [key for key,value in regionDict.items() if nga in value][0]
-                #if region in newWorld:
-                #  rgb = (1,0,0,arrowAlpha)
-                #else:
-                #  rgb = (0,0,1,arrowAlpha)
-                # TODO: support coloring by elements of subseriesColumn
-                rgb = (0,0,1,arrowAlpha)
+                if subseriesColors is not None:
+                    rgb = subseriesColors[nga]
+                else:
+                    rgb = (0,0,1,arrowAlpha)
                 plt.arrow(self.movArrayOut[i,0,0],
                           self.movArrayOut[i,1,0],
                           self.movArrayOut[i,0,1],
@@ -143,6 +144,48 @@ class StratifiedTimeSeries:
 #                    pc2 = movArrayOut[i,1,0] + velArrayOut[i,1,1]*(float(n+1))*100.
 #                    plt.scatter(pc1,pc2, s=5,  color=rgb)
 
+    # TODO: consider moving Seshat methods into a standalone class
+    # @staticmethod
+    def buildNewOldWorldSubseriesColors(newWorldCol, oldWorldCol, NGAs):
+        """Build a subseriesColors dictionary for plotPC1PC2Movements where
+        NGAs in the New World have the color newWorldCol and NGAs in the Old
+        World have the color oldWorldCol.
+        """
+
+        regionDict = getRegionDict('Equinox')
+        newWorldRegions = ['North America',
+                           'South America']
+ 
+        oldWorldRegions = ['Africa',
+                           'Europe',
+                           'Central Eurasia',
+                           'Southwest Asia',
+                           'South Asia',
+                           'Southeast Asia',
+                           'East Asia',
+                           'Oceania-Australia']
+        # TODO: consider putting the following code in a standalone method
+        oldWorldNGAs = list()
+        newWorldNGAs = list()
+        regionDict = getRegionDict('Equinox')
+        for region in newWorldRegions:
+            for nga in regionDict[region]:
+                newWorldNGAs.append(nga)
+
+        for region in oldWorldRegions:
+            for nga in regionDict[region]:
+                oldWorldNGAs.append(nga)
+ 
+        subseriesColors = dict()
+        for nga in NGAs:
+            if nga in newWorldNGAs:
+                subseriesColors[nga] = newWorldCol
+            elif nga in oldWorldNGAs:
+                subseriesColors[nga] = oldWorldCol
+            else:
+                raise ValueError('Unrecoganized nga = ' + str(nga))
+        return subseriesColors
+ 
     # @staticmethod
     def loadSeshatPNAS2017Data():
         """Load the data from the 2017 PNAS article. This returns a

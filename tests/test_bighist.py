@@ -58,12 +58,27 @@ class TestBigHist(unittest.TestCase):
         self.assertEqual(ts.movArrayOutInterp.shape, (852, 9, 2))
         self.assertEqual(ts.flowInfoInterp.shape, (852, 2))
         save_file = 'PC1PC2_test_plot.png'
+
         if os.path.exists(save_file):
             os.remove(save_file)
         ts.plotPC1PC2Movements()
         plt.savefig(save_file)
         self.assertTrue(os.path.exists(save_file))
-        #os.remove(save_file)
+        os.remove(save_file)
+
+        # Build a subseriesColors dictionary
+        NGAs = list(set(ts.df[ts.subseriesColumn]))
+        arrowAlpha = 1
+        newWorldCol = rgb = (1,0,0,arrowAlpha)
+        oldWorldCol = rgb = (0,0,1,arrowAlpha)
+        subseriescolors = StratifiedTimeSeries.\
+            buildNewOldWorldSubseriesColors(newWorldCol, oldWorldCol, NGAs)
+        if os.path.exists(save_file):
+            os.remove(save_file)
+        ts.plotPC1PC2Movements(subseriesColors=subseriescolors)
+        plt.savefig(save_file)
+        self.assertTrue(os.path.exists(save_file))
+        os.remove(save_file)
 
     def test_getRegionDict(self):
         # Ensure an error is thrown for an unsupported version

@@ -14,6 +14,10 @@ setup(
     install_requires=['numpy', 'pandas'],
     # *strongly* suggested for sharing
     version='0.1',
+    package_data={
+            #'bighist': ['bighist/data/*.csv', 'bighist/data/*.xlsx']
+            'bighist': ['data/*.csv', 'data/*.xlsx']
+        },
     # The license can be anything you like
     license='MIT', # TODO: will this do?
     description='A Python package for working with Big History Data and doing\

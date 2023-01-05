@@ -18,8 +18,7 @@ def loadSeshatDataset(version, flavor=None):
     if not version in ['PNAS2017', 'Equinox']:
         raise ValueError('Unrecognized version = ' + version)
     
-    #data_dir = pkg_resources.resource_filename('bighist', 'bighist/data/')
-    data_dir = pkg_resources.resource_filename('bighist', 'data/')
+    data_dir = pkg_resources.resource_filename(__name__, 'data/')
     if version == 'Equinox':
         if flavor is None:
             raise TypeError('flavor (worksheet) must be specified for the\

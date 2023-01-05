@@ -4,6 +4,8 @@ import os
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 import copy
+from matplotlib import pyplot as plt
+
 
 
 def loadSeshatDataset(version, flavor=None):
@@ -102,7 +104,45 @@ class StratifiedTimeSeries:
         self.movArrayOut = movArrayOut
         self.velArrayOut = velArrayOut
         self.flowInfo = flowInfo
- 
+
+    def plotPC1PC2Movements(self,
+                            lineWidth=.01,
+                            headWidth=.15,
+                            headLength=.1,
+                            arrowAlpha=1):
+        """Create a movement plot for PC1 and PC2 using movArrayOut. Most plot
+        elements, including axis labels, should be set outside this method. The
+        exceptions are the optional inputs, lineWidth (width of the lines),
+        headWidth (width of the arrows), headLength (length of the arrows), and
+        arrowAlpha (transparency of the arrows).
+        """
+        for i in range(0, self.movArrayOut.shape[0]):
+            if not np.isnan(self.movArrayOut[i,0,1]):
+                nga = self.flowInfo[self.subseriesColumn][i]
+                #region = [key for key,value in regionDict.items() if nga in value][0]
+                #if region in newWorld:
+                #  rgb = (1,0,0,arrowAlpha)
+                #else:
+                #  rgb = (0,0,1,arrowAlpha)
+                # TODO: support coloring by elements of subseriesColumn
+                rgb = (0,0,1,arrowAlpha)
+                plt.arrow(self.movArrayOut[i,0,0],
+                          self.movArrayOut[i,1,0],
+                          self.movArrayOut[i,0,1],
+                          self.movArrayOut[i,1,1],
+                          width=lineWidth,
+                          head_width=headWidth,
+                          head_length=headLength,
+                          color=rgb)
+#                # Next, plot interpolated points (if necessary)
+#                # Doing this all very explicitly to make the code clearer
+#                dt = self.velArrayOut[i,0,2]
+#                if dt > 100:
+#                  for n in range(0,int(dt / 100) - 1):
+#                    pc1 = movArrayOut[i,0,0] + velArrayOut[i,0,1]*(float(n+1))*100.
+#                    pc2 = movArrayOut[i,1,0] + velArrayOut[i,1,1]*(float(n+1))*100.
+#                    plt.scatter(pc1,pc2, s=5,  color=rgb)
+
     # @staticmethod
     def loadSeshatPNAS2017Data():
         """Load the data from the 2017 PNAS article. This returns a
@@ -114,7 +154,26 @@ class StratifiedTimeSeries:
                     'writing', 'texts', 'money']
         
         return StratifiedTimeSeries(CC_df, CC_names, 'Time', 'NGA')
- 
+
+    # @staticmethod
+    def createGridForPC1PC2(dGrid, flowArray):
+        """Create a grid for PC1 and PC2 based on the grid spacing dGrid
+        """
+     
+        # Remove endpoints
+        ind = [True if not np.isnan(flowArray[i,0,1]) else False\
+            for i in range(flowArray.shape[0])]
+        fa = flowArray[ind,:,:]
+        points2D = fa[:,range(0,2),0]
+    
+        u0Min = np.floor(np.min(points2D[:,0] - dGrid) / dGrid) * dGrid # PC1 min
+        u0Max = np.ceil(np.max(points2D[:,0] + dGrid) / dGrid) * dGrid # PC1 max
+        v0Min = np.floor(np.min(points2D[:,1] - dGrid) / dGrid) * dGrid # PC1 min
+        v0Max = np.ceil(np.max(points2D[:,1] + dGrid) / dGrid) * dGrid # PC1 max
+        u0Vect = np.arange(u0Min,u0Max,dGrid)
+        v0Vect = np.arange(v0Min,v0Max,dGrid)
+        return u0Vect, v0Vect
+
 def getEquinoxWorksheets():
     """A utility function for getting the worksheets in the Equinox Excel file
     """
@@ -384,3 +443,4 @@ def doFlowAnalysis(df, pcMatrix, subseriesColumn,
 
     return movArrayOut, velArrayOut, flowInfo,\
         movArrayOutInterp, flowInfoInterp
+

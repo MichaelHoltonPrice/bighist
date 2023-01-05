@@ -57,6 +57,13 @@ class TestBigHist(unittest.TestCase):
         self.assertEqual(ts.flowInfo.shape, (414, 2))
         self.assertEqual(ts.movArrayOutInterp.shape, (852, 9, 2))
         self.assertEqual(ts.flowInfoInterp.shape, (852, 2))
+        save_file = 'PC1PC2_test_plot.png'
+        if os.path.exists(save_file):
+            os.remove(save_file)
+        ts.plotPC1PC2Movements()
+        plt.savefig(save_file)
+        self.assertTrue(os.path.exists(save_file))
+        #os.remove(save_file)
 
     def test_getRegionDict(self):
         # Ensure an error is thrown for an unsupported version

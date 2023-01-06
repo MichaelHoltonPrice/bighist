@@ -80,6 +80,29 @@ class TestBigHist(unittest.TestCase):
         self.assertTrue(os.path.exists(save_file))
         os.remove(save_file)
 
+        # Do a partial test with loadSeshatEquinoxData
+        ts = StratifiedTimeSeries.loadSeshatEquinoxData()
+        self.assertEqual(ts.df.shape, (1494, 13))
+        self.assertEqual(len(ts.features), 8)
+        self.assertEqual(ts.featureMatrix.shape, (1494, 8))
+        self.assertEqual(ts.pcMatrix.shape, (1494, 8))
+        self.assertEqual(ts.P.shape, (1494, 8))
+        self.assertEqual(len(ts.D), 8)
+        self.assertEqual(ts.Q.shape, (8, 8))
+
+        # Check the functioning of the optional input subseriesToKeep
+        allNGAs = set(ts.df['NGA'])
+        NGAsToKeep = getNGAs('PNAS2017')
+        ts2 = StratifiedTimeSeries.\
+            loadSeshatEquinoxData(subseriesToKeep=NGAsToKeep)
+        subsetNGAs = set(ts2.df['NGA'])
+        expectedDiff = set(['Galilee',
+                            'Basin of Mexico',
+                            'Southern Mesopotamia',
+                            'Crete',
+                            'Middle Ganga'])
+        self.assertTrue(allNGAs.difference(subsetNGAs) == expectedDiff)
+
     def test_getRegionDict(self):
         # Ensure an error is thrown for an unsupported version
         with self.assertRaises(ValueError):

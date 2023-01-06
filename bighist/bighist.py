@@ -64,8 +64,14 @@ class StratifiedTimeSeries:
         subSeriesColumn (str): The column in df that marks sub-series
         featureMatrix (numpy array): A matrix of features, normalied to have
             a mean of 0 and standard deviation of 1.
+        subseriesToKeep (list): An optional list of subseries to keep (i.e.,
+            only keep rows of df that are in subseriesToKeep)
     """
-    def __init__(self, df, features, timeColumn, subseriesColumn):
+    def __init__(self, df, features, timeColumn,
+                 subseriesColumn, subseriesToKeep=None):
+        # If necessary, filter using subseriesToKeep
+        if subseriesToKeep is not None:
+            df = df[df[subseriesColumn].isin(subseriesToKeep)]
         # Store the attributes
         self.df = df
         self.features = features
@@ -187,6 +193,32 @@ class StratifiedTimeSeries:
         return subseriesColors
  
     # @staticmethod
+    def loadSeshatPNAS2017Data(subseriesToKeep=None):
+        """Load the data from the 2017 PNAS article. This returns a
+        StratifiedTimeSeries object.
+        """
+        CC_df = loadSeshatDataset(version='PNAS2017', flavor='Imputations')
+        CC_names = ['PolPop','PolTerr', 'CapPop',
+                    'levels', 'government','infrastr',
+                    'writing', 'texts', 'money']
+        
+        return StratifiedTimeSeries(CC_df, CC_names, 'Time', 'NGA',
+                                    subseriesToKeep)
+
+    # @staticmethod
+    def loadSeshatEquinoxData(subseriesToKeep=None):
+        """Load the Seshat Equinox dataset. This returns a StratifiedTimeSeries
+        object.
+        """
+        CC_df = loadSeshatDataset(version='Equinox', flavor='ImpSCDat')
+        CC_names = ['Pop', 'Terr', 'Cap',
+                    'Hier', 'Gov', 'Infra',
+                    'Info', 'Money']
+        
+        return StratifiedTimeSeries(CC_df, CC_names, 'Time', 'NGA',
+                                    subseriesToKeep)
+
+   # @staticmethod
     def loadSeshatPNAS2017Data():
         """Load the data from the 2017 PNAS article. This returns a
         StratifiedTimeSeries object.
@@ -197,6 +229,7 @@ class StratifiedTimeSeries:
                     'writing', 'texts', 'money']
         
         return StratifiedTimeSeries(CC_df, CC_names, 'Time', 'NGA')
+
 
     # @staticmethod
     def createGridForPC1PC2(dGrid, flowArray):
